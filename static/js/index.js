@@ -4,22 +4,24 @@
     const X = 0, Y = 1;
     class Board {
         constructor(height, width) {
-            this.cells = [];
             this.evaluate = () => {
-                const populated = new Set(this.cells.map((cell) => cell.pos));
-                this.cells.forEach((cell) => {
-                    const count = Array.from(populated).reduce((acc, cur) => {
-                        console.log('checking', cur, cell.neighbors);
-                        if (cell.neighbors.includes(cur)) {
+                this.cells.forEach((cell, key) => {
+                    const liveNeighbors = cell.neighbors.reduce((acc, neighbor) => {
+                        var _a;
+                        if ((_a = this.cells.get(neighbor)) === null || _a === void 0 ? void 0 : _a.alive) {
                             return acc + 1;
                         }
                         return acc + 0;
                     }, 0);
-                    console.log(`cell ${cell.pos} has ${count} neighbors`);
+                    if (liveNeighbors > 0) {
+                        console.log(`cell at ${key} has ${liveNeighbors} live neighbors.`);
+                    }
                 });
             };
             this.placeCell = (cell, x, y) => {
-                const origin = [this.elm.offsetWidth / 2, (this.elm.offsetHeight / 2)];
+                const halfHeight = (this.elm.clientHeight / 2) + this.elm.offsetTop;
+                const halfWidth = (this.elm.clientWidth / 2) + this.elm.offsetLeft;
+                const origin = [halfWidth, halfHeight];
                 if (x)
                     cell.x = x;
                 else
@@ -29,28 +31,56 @@
                 else
                     y = cell.y;
                 // Check x,y within board boundaries
+                if (x > halfWidth || y > halfWidth) {
+                    console.warn(`cannot place cell at (${x}, ${y}); out of bounds.`);
+                    return;
+                }
                 cell.elm.style.position = 'absolute';
-                cell.elm.style.left = `${origin[Y] + cell.x}px`;
-                cell.elm.style.top = `${origin[X] - cell.y}px`;
-                this.elm.appendChild(cell.elm);
-                this.cells.push(cell);
+                cell.elm.style.left = `${origin[X] - cell.x}px`;
+                cell.elm.style.top = `${origin[Y] - cell.y}px`;
+                if (cell.alive) {
+                    this.elm.appendChild(cell.elm);
+                }
+                this.cells.set(cell.pos, cell);
             };
-            this.cells = [];
+            this._height = height;
+            this._width = width;
+            this.cells = new Map();
             this.elm = document.getElementById('board');
             if (!this.elm) {
                 throw Error("No element with id 'board' found.");
             }
             this.elm.style.height = `${height.toString()}px`;
             this.elm.style.width = `${width.toString()}px`;
+            // Create cells.
+            const maxX = this._width / 2;
+            const maxY = this._height / 2;
+            const minX = -1 * maxX;
+            const minY = -1 * maxY;
+            for (let x = minX; x < maxX; x++) {
+                for (let y = minY; y < maxY; y++) {
+                    this.placeCell(new Cell(x, y));
+                }
+            }
+        }
+        get height() {
+            return this._height;
+        }
+        get width() {
+            return this._width;
         }
     }
     class Cell {
         constructor(x, y) {
+            this._alive = false;
             this._x = x || 0;
             this._y = y || 0;
             this.elm = document.createElement('div');
             this.elm.classList.add('cell');
             this._neighbors = this.generateNeighbors();
+        }
+        get alive() {
+            return this._alive;
         }
         get neighbors() {
             return this._neighbors;
@@ -63,6 +93,12 @@
         }
         get y() {
             return this._y;
+        }
+        setAlive() {
+            this._alive = true;
+        }
+        setDead() {
+            this._alive = false;
         }
         set x(_x) {
             this._x = _x;
@@ -83,11 +119,13 @@
             ];
         }
     }
-    const board = new Board(600, 600);
-    board.placeCell(new Cell());
-    board.placeCell(new Cell(0, 1));
-    board.placeCell(new Cell(10, 10));
-    board.placeCell(new Cell(), 25, 25);
+    const board = new Board(150, 150);
+    const cell1 = new Cell(70, 70);
+    cell1.setAlive();
+    board.placeCell(cell1);
+    // const cell2 = new Cell(69, 71)
+    // cell2.setAlive();
+    // board.placeCell(cell2);
     board.evaluate();
     console.log('done.');
 })();
