@@ -53,8 +53,25 @@
           return acc + 0;
         }, 0);
 
-        if (liveNeighbors > 0) {
-          console.log(`cell at ${key} has ${liveNeighbors} live neighbors.`)
+        if (cell.alive) {
+          if (liveNeighbors < 2) {
+            console.log(`cell at ${key} has ${liveNeighbors} live neighbors, dies of isolation.`)
+            cell.setDead()
+            board.elm.removeChild(cell.elm)
+          }
+
+          if (liveNeighbors > 3) {
+            console.log(`cell at ${key} has ${liveNeighbors} live neighbors, dies of overpopulation.`)
+            cell.setDead()
+            board.elm.removeChild(cell.elm)
+          }
+        }
+        else {
+          if (liveNeighbors === 3) {
+            console.log(`cell at ${key} has ${liveNeighbors} live neighbors, springs to life!`)
+            cell.setAlive();
+            board.elm.appendChild(cell.elm)
+          }
         }
       })
     }
